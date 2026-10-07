@@ -4,7 +4,7 @@ A web-based event management system for planning events, registering attendees, 
 
 Naan Mudhalvan project.
 
-Live demo: https://YOUR-USERNAME.github.io/eventforce-management-system/
+Live demo: https://Shavez26.github.io/eventforce-management-system/
 
 Overview
 
@@ -34,7 +34,7 @@ eventforce-management-system/
 How to Run
 Download or clone the repository:
 bash
-   git clone https://github.com/YOUR-USERNAME/eventforce-management-system.git
+   git clone https://github.com/Shavez26/eventforce-management-system.git
 Open index.html in any modern browser.
 No installation or server is needed.
 Screenshots
