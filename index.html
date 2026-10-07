@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EventForce Management System</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#eef1f4;--panel:#fff;--ink:#1b2a41;--mute:#5d6b80;--line:#d5dce5;--acc:#2f5bea;--acc-ink:#fff;--ok:#1e8e5a;--warn:#b87800;--bad:#c23b3b;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root:not([data-theme="light"]){}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1624;--panel:#18223a;--ink:#e8edf6;--mute:#93a1ba;--line:#2a3654;--acc:#6f8cff;--acc-ink:#0f1624;--ok:#4cc38a;--warn:#e8b13c;--bad:#ef7a7a}}
+:root[data-theme="dark"]{--bg:#0f1624;--panel:#18223a;--ink:#e8edf6;--mute:#93a1ba;--line:#2a3654;--acc:#6f8cff;--acc-ink:#0f1624;--ok:#4cc38a;--warn:#e8b13c;--bad:#ef7a7a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:28px 20px 8px;max-width:1040px;margin:auto}
+h1{font-size:clamp(28px,5vw,44px);font-weight:800;margin:0;letter-spacing:-.02em}
+header p{margin:4px 0 0;color:var(--mute)}
+nav{display:flex;gap:4px;max-width:1040px;margin:16px auto 0;padding:0 20px;overflow-x:auto;border-bottom:1px solid var(--line)}
+nav button{background:none;border:0;border-bottom:3px solid transparent;color:var(--mute);font:600 15px inherit;font-family:inherit;padding:10px 14px;cursor:pointer;white-space:nowrap}
+nav button[aria-selected=true]{color:var(--ink);border-color:var(--acc)}
+main{max-width:1040px;margin:auto;padding:20px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.stat b{display:block;font-size:30px;font-weight:800;line-height:1.1}
+.stat span{color:var(--mute);font-size:14px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+h2{font-size:20px;margin:0 0 12px}
+form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+label{display:grid;gap:3px;font-size:13px;color:var(--mute)}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px;min-width:0}
+button.p{background:var(--acc);color:var(--acc-ink);border:0;border-radius:6px;padding:9px 14px;font:600 15px inherit;font-family:inherit;cursor:pointer}
+button.s{background:none;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:4px 9px;font:inherit;font-size:13px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--acc);outline-offset:1px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:13px;color:var(--mute);font-weight:600}
+.tag{display:inline-block;padding:1px 9px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid currentColor}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;min-width:80px}
+.bar i{display:block;height:100%;background:var(--acc)}
+.empty{color:var(--mute);padding:14px 0}
+.filter{margin-bottom:12px;max-width:320px}
+.top{display:flex;justify-content:flex-end;max-width:1040px;margin:auto;padding:0 20px}
+</style>
+</head>
+<body>
+<header>
+<h1>EventForce</h1>
+<p>Plan events, register attendees, assign your team and track spending in one place.</p>
+</header>
+<nav role="tablist" id="nav"></nav>
+<main id="app"></main>
+<script>
+const TABS=["Dashboard","Events","Attendees","Team","Budget"];
+let tab="Dashboard",filterEv="";
+const seed={events:[
+{id:1,name:"Tech Fest 2026",date:"2026-11-14",venue:"Main Auditorium",cap:300,budget:150000,status:"Planned"},
+{id:2,name:"Career Fair",date:"2026-12-03",venue:"Convention Hall",cap:500,budget:220000,status:"Planned"}],
+attendees:[{id:1,ev:1,name:"Priya S",email:"priya@example.com",in:false},{id:2,ev:1,name:"Arun K",email:"arun@example.com",in:true},{id:3,ev:2,name:"Meena R",email:"meena@example.com",in:false}],
+staff:[{id:1,ev:1,name:"Karthik",role:"Coordinator"},{id:2,ev:2,name:"Divya",role:"Registration desk"}],
+exp:[{id:1,ev:1,item:"Stage and sound",amt:45000},{id:2,ev:2,item:"Venue deposit",amt:80000}]};
+let D;
+try{D=JSON.parse(localStorage.getItem("eventforce"))}catch(e){}
+if(!D||!D.events)D=JSON.parse(JSON.stringify(seed));
+const save=()=>{try{localStorage.setItem("eventforce",JSON.stringify(D))}catch(e){}};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const nid=a=>a.reduce((m,x)=>Math.max(m,x.id),0)+1;
+const inr=n=>"₹"+Number(n).toLocaleString("en-IN");
+const evName=id=>(D.events.find(e=>e.id==id)||{name:"Deleted event"}).name;
+const evOpts=()=>D.events.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join("");
+const fmt=d=>new Date(d+"T00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+
+function nav(){$("#nav").innerHTML=TABS.map(t=>`<button role="tab" aria-selected="${t==tab}" onclick="go('${t}')">${t}</button>`).join("")}
+function go(t){tab=t;render()}
+function table(head,rows){return rows.length?`<div class="tw"><table><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr>${rows.join("")}</table></div>`:`<p class="empty">Nothing here yet. Add the first entry above.</p>`}
+function filterBox(){return D.events.length?`<label class="filter">Show event<select onchange="filterEv=this.value;render()"><option value="">All events</option>${D.events.map(e=>`<option value="${e.id}" ${filterEv==e.id?"selected":""}>${esc(e.name)}</option>`).join("")}</select></label>`:""}
+const pick=a=>a.filter(x=>!filterEv||x.ev==filterEv);
+
+function render(){nav();let h="";
+if(tab=="Dashboard"){
+const spent=D.exp.reduce((s,x)=>s+x.amt,0),bud=D.events.reduce((s,x)=>s+x.budget,0);
+h=`<div class="stats"><div class="stat"><b>${D.events.length}</b><span>Events</span></div><div class="stat"><b>${D.attendees.length}</b><span>Registrations</span></div><div class="stat"><b>${D.attendees.filter(a=>a.in).length}</b><span>Checked in</span></div><div class="stat"><b>${D.staff.length}</b><span>Team members</span></div><div class="stat"><b>${inr(bud-spent)}</b><span>Budget left</span></div></div>
+<div class="box"><h2>Event overview</h2>${table(["Event","Date","Seats filled","Spent"],D.events.map(e=>{const n=D.attendees.filter(a=>a.ev==e.id).length,sp=D.exp.filter(x=>x.ev==e.id).reduce((s,x)=>s+x.amt,0);return`<tr><td>${esc(e.name)}</td><td>${fmt(e.date)}</td><td><div class="bar"><i style="width:${Math.min(100,n/e.cap*100)}%"></i></div>${n} of ${e.cap}</td><td>${inr(sp)} of ${inr(e.budget)}</td></tr>`}))}</div>
+<button class="s" onclick="resetData()">Reset to sample data</button>`}
+if(tab=="Events"){
+h=`<div class="box"><h2>Create event</h2><form onsubmit="addEv(event)"><label>Name<input name="name" required></label><label>Date<input type="date" name="date" required></label><label>Venue<input name="venue" required></label><label>Capacity<input type="number" name="cap" min="1" required></label><label>Budget (₹)<input type="number" name="budget" min="0" required></label><button class="p">Create event</button></form></div>
+<div class="box"><h2>All events</h2>${table(["Event","Date","Venue","Capacity","Budget","Status",""],D.events.map(e=>`<tr><td>${esc(e.name)}</td><td>${fmt(e.date)}</td><td>${esc(e.venue)}</td><td>${e.cap}</td><td>${inr(e.budget)}</td><td><select onchange="setSt(${e.id},this.value)">${["Planned","Live","Completed","Cancelled"].map(s=>`<option ${s==e.status?"selected":""}>${s}</option>`).join("")}</select></td><td><button class="s" onclick="delEv(${e.id})">Delete</button></td></tr>`))}</div>`}
+if(tab=="Attendees"){
+h=`<div class="box"><h2>Register attendee</h2>${D.events.length?`<form onsubmit="addAt(event)"><label>Event<select name="ev">${evOpts()}</select></label><label>Name<input name="name" required></label><label>Email<input type="email" name="email" required></label><button class="p">Register</button></form>`:`<p class="empty">Create an event first.</p>`}</div>
+<div class="box"><h2>Attendees</h2>${filterBox()}${table(["Name","Email","Event","Status",""],pick(D.attendees).map(a=>`<tr><td>${esc(a.name)}</td><td>${esc(a.email)}</td><td>${esc(evName(a.ev))}</td><td><span class="tag ${a.in?"ok":"warn"}">${a.in?"Checked in":"Registered"}</span></td><td><button class="s" onclick="chk(${a.id})">${a.in?"Undo check-in":"Check in"}</button> <button class="s" onclick="del('attendees',${a.id})">Remove</button></td></tr>`))}</div>`}
+if(tab=="Team"){
+h=`<div class="box"><h2>Assign team member</h2>${D.events.length?`<form onsubmit="addSt(event)"><label>Event<select name="ev">${evOpts()}</select></label><label>Name<input name="name" required></label><label>Role<select name="role">${["Coordinator","Registration desk","Logistics","Volunteer","Security","Hospitality"].map(r=>`<option>${r}</option>`).join("")}</select></label><button class="p">Assign</button></form>`:`<p class="empty">Create an event first.</p>`}</div>
+<div class="box"><h2>Team</h2>${filterBox()}${table(["Name","Role","Event",""],pick(D.staff).map(s=>`<tr><td>${esc(s.name)}</td><td>${esc(s.role)}</td><td>${esc(evName(s.ev))}</td><td><button class="s" onclick="del('staff',${s.id})">Remove</button></td></tr>`))}</div>`}
+if(tab=="Budget"){
+h=`<div class="box"><h2>Record expense</h2>${D.events.length?`<form onsubmit="addEx(event)"><label>Event<select name="ev">${evOpts()}</select></label><label>Item<input name="item" required></label><label>Amount (₹)<input type="number" name="amt" min="1" required></label><button class="p">Add expense</button></form>`:`<p class="empty">Create an event first.</p>`}</div>
+<div class="box"><h2>Budget by event</h2>${table(["Event","Budget","Spent","Left"],D.events.map(e=>{const sp=D.exp.filter(x=>x.ev==e.id).reduce((s,x)=>s+x.amt,0);return`<tr><td>${esc(e.name)}</td><td>${inr(e.budget)}</td><td>${inr(sp)}</td><td class="${e.budget-sp<0?"bad":"ok"}">${inr(e.budget-sp)}</td></tr>`}))}</div>
+<div class="box"><h2>Expenses</h2>${filterBox()}${table(["Item","Event","Amount",""],pick(D.exp).map(x=>`<tr><td>${esc(x.item)}</td><td>${esc(evName(x.ev))}</td><td>${inr(x.amt)}</td><td><button class="s" onclick="del('exp',${x.id})">Remove</button></td></tr>`))}</div>`}
+$("#app").innerHTML=h}
+
+const fd=e=>{e.preventDefault();return Object.fromEntries(new FormData(e.target))};
+function addEv(e){const f=fd(e);D.events.push({id:nid(D.events),name:f.name,date:f.date,venue:f.venue,cap:+f.cap,budget:+f.budget,status:"Planned"});save();render()}
+function addAt(e){const f=fd(e);if(D.attendees.filter(a=>a.ev==f.ev).length>=D.events.find(x=>x.id==f.ev).cap){alert("This event is full. Raise its capacity to register more attendees.");return}D.attendees.push({id:nid(D.attendees),ev:+f.ev,name:f.name,email:f.email,in:false});save();render()}
+function addSt(e){const f=fd(e);D.staff.push({id:nid(D.staff),ev:+f.ev,name:f.name,role:f.role});save();render()}
+function addEx(e){const f=fd(e);D.exp.push({id:nid(D.exp),ev:+f.ev,item:f.item,amt:+f.amt});save();render()}
+function setSt(id,v){D.events.find(e=>e.id==id).status=v;save()}
+function chk(id){const a=D.attendees.find(x=>x.id==id);a.in=!a.in;save();render()}
+function del(k,id){D[k]=D[k].filter(x=>x.id!=id);save();render()}
+function delEv(id){if(!confirm("Delete this event and all its attendees, team and expenses?"))return;D.events=D.events.filter(e=>e.id!=id);["attendees","staff","exp"].forEach(k=>D[k]=D[k].filter(x=>x.ev!=id));save();render()}
+function resetData(){if(confirm("Replace all data with the sample data?")){D=JSON.parse(JSON.stringify(seed));save();render()}}
+render();
+</script>
+</body>
+</html>
